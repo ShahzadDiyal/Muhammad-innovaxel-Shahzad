@@ -7,7 +7,7 @@
       <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.9/babel.min.js"></script>
-      <script   src="https://cdn.tailwindcss.com"></script>
+      <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body>
       <div id="root"></div>
@@ -15,9 +15,67 @@
         const { useState } = React;
 
         function App() {
+          const [url, setUrl] = useState('');
+          const [shortUrl, setShortUrl] = useState(null);
+          const [error, setError] = useState('');
+
+          const handleSubmit = async (e) => {
+            e.preventDefault();
+            setError('');
+            setShortUrl(null);
+            try {
+              const response = await fetch('http://localhost:5000/shorten', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url }),
+              });
+              const data = await response.json();
+              if (response.ok) {
+                setShortUrl(data);
+              } else {
+                setError(data.error || 'Failed to shorten URL');
+              }
+            } catch (err) {
+              setError('Server error');
+            }
+          };
+
           return (
             <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-              <h1 className="text-3xl font-bold">URL Shortener</h1>
+              <h1 className="text-3xl font-bold mb-6">URL Shortener</h1>
+              <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="Enter URL to shorten"
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
+                >
+                  Shorten URL
+                </button>
+                {error && <p className="text-red-500 mt-2">{error}</p>}
+                {shortUrl && (
+                  <div className="mt-4">
+                    <p>
+                      Short URL:{' '}
+                      <a
+                        href={`http://localhost:5000/${shortUrl.shortCode}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 underline"
+                      >
+                        {`http://localhost:5000/${shortUrl.shortCode}`}
+                      </a>
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           );
         }
