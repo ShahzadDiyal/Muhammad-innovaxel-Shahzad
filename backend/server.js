@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const { nanoid } = require("nanoid");
 const { Url } = require("./models/urlShortner");
-
+const validUrl = require("valid-url");
 const app = express();
 const PORT = 5000;
 
@@ -22,6 +22,9 @@ mongoose
 
 app.post("/shorten", async (req, res) => {
   const { url } = req.body;
+  if (!validUrl.isWebUri(url)) {
+    return res.status(400).json({ error: "Invalid URL" });
+  }
   const shortCode = nanoid(6);
   try {
     const newUrl = new Url({ url, shortCode });
