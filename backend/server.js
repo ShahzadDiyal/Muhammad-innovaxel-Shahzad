@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const { nanoid } = require("nanoid");
-const { Url } = require("./models/urlShortner");
+const Url = require('./models/urlShortner');
 const validUrl = require("valid-url");
 const app = express();
 const PORT = 5000;
@@ -22,10 +22,13 @@ mongoose
 
 app.post("/shorten", async (req, res) => {
   const { url } = req.body;
+
   if (!validUrl.isWebUri(url)) {
     return res.status(400).json({ error: "Invalid URL" });
   }
+
   const shortCode = nanoid(6);
+
   try {
     const newUrl = new Url({ url, shortCode });
     await newUrl.save();
@@ -37,12 +40,14 @@ app.post("/shorten", async (req, res) => {
       updatedAt: newUrl.updatedAt,
     });
   } catch (error) {
+    console.error('Server Error:', error);
     if (error.code === 11000) {
       return res.status(400).json({ error: "Short code already exists" });
     }
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 app.get("/shorten/:shortCode", async (req, res) => {
   const { shortCode } = req.params;
