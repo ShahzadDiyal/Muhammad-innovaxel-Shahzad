@@ -44,4 +44,27 @@ app.post("/shorten", async (req, res) => {
   }
 });
 
+app.get("/shorten/:shortCode", async (req, res) => {
+  const { shortCode } = req.params;
+  try {
+    const urlDoc = await Url.findOneAndUpdate(
+      { shortCode },
+      { $inc: { accessCount: 1 }, updatedAt: Date.now() },
+      { new: true }
+    );
+    if (!urlDoc) {
+      return res.status(404).json({ error: "Short URL not found" });
+    }
+    res.json({
+      id: urlDoc._id,
+      url: urlDoc.url,
+      shortCode: urlDoc.shortCode,
+      createdAt: urlDoc.createdAt,
+      updatedAt: urlDoc.updatedAt,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
