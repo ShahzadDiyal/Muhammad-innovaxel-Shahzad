@@ -84,5 +84,41 @@ app.get("/:shortCode", async (req, res) => {
   }
 });
 
+app.put("/shorten/:shortCode", async (req, res) => {
+  const { shortCode } = req.params;
+  const { url, newShortCode } = req.body;
+
+  // Validate inputs
+  if (url && !validUrl.isWebUri(url)) {
+    return res.status(400).json({ error: "Invalid URL" });
+  }
+  if (newShortCode && !/^[a-zA-Z0-9]{6}$/.test(newShortCode)) {
+    return res.status(400).json({ error: "Invalid short code format" });
+  }
+
+  try {
+    const updateFields = { updatedAt: Date.now() };
+    if (url) updateFields.url = url;
+    if (newShortCode) updateFields.shortCode = newShortCode;
+
+    const urlDoc = await Url.findOneAndUpdate({ shortCode }, updateFields, {
+      new: true,
+    });
+
+    if (!urlDoc) {
+      return res.status(404).json({ error: "Short URL not found" });
+    }
+
+    res.json({
+      id: urlDoc._id,
+      url: urlDoc.url,
+      shortCode: urlDoc.shortCode,
+      createdAt: urlDoc.createdAt,
+      updatedAt: urlDoc.updatedAt,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
