@@ -128,4 +128,18 @@ app.put("/shorten/:shortCode", async (req, res) => {
   }
 });
 
+app.delete("/shorten/:shortCode", async (req, res) => {
+  const { shortCode } = req.params;
+  try {
+    const urlDoc = await Url.findOneAndDelete({ shortCode });
+    if (!urlDoc) {
+      return res.status(404).json({ error: "Short URL not found" });
+    }
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
