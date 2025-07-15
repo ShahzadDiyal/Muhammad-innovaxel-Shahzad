@@ -97,6 +97,13 @@ app.put("/shorten/:shortCode", async (req, res) => {
   }
 
   try {
+    //check whether the code is unique or not
+    if (newShortCode) {
+      const existingUrl = await Url.findOne({ shortCode: newShortCode });
+      if (existingUrl && existingUrl.shortCode !== shortCode) {
+        return res.status(400).json({ error: "Short code already exists" });
+      }
+    }
     const updateFields = { updatedAt: Date.now() };
     if (url) updateFields.url = url;
     if (newShortCode) updateFields.shortCode = newShortCode;
