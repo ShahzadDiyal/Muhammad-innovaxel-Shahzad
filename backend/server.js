@@ -67,4 +67,22 @@ app.get("/shorten/:shortCode", async (req, res) => {
   }
 });
 
+app.get("/:shortCode", async (req, res) => {
+  const { shortCode } = req.params;
+  try {
+    const urlDoc = await Url.findOneAndUpdate(
+      { shortCode },
+      { $inc: { accessCount: 1 }, updatedAt: Date.now() },
+      { new: true }
+    );
+    if (!urlDoc) {
+      return res.status(404).json({ error: "Short URL not found" });
+    }
+    res.redirect(urlDoc.url);
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
