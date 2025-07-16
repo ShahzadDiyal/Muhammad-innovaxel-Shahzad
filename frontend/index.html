@@ -1,49 +1,91 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>URL Shortener</title>
-      <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.9/babel.min.js"></script>
-      <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body>
-      <div id="root"></div>
-      <script type="text/babel">
-        const { useState } = React;
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
 
-        function App() {
-          const [url, setUrl] = useState('');
-          const [shortUrl, setShortUrl] = useState(null);
-          const [error, setError] = useState('');
+    <!-- React 17 -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
 
-          const handleSubmit = async (e) => {
+    <!-- Babel for JSX transformation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      // Main App Component
+      function App() {
+        const [url, setUrl] = React.useState('');
+        const [shortCode, setShortCode] = React.useState('');
+        const [shortUrl, setShortUrl] = React.useState(null);
+        const [newShortCode, setNewShortCode] = React.useState('');
+        const [error, setError] = React.useState('');
+        const [loading, setLoading] = React.useState(false);
+
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          if (!url) {
+            setError('Please enter a URL');
+            return;
+          }
+
+          setError('');
+          setShortUrl(null);
+          setLoading(true);
+
+          try {
+            const response = await fetch('http://localhost:5000/shorten', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+              setShortUrl(data);
+            } else {
+              setError(data.error || 'Failed to shorten URL');
+            }
+          } catch (err) {
+            setError('Server error. Please try again later.');
+            console.error('Error:', err);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const handleUpdate = async (e) => {
             e.preventDefault();
             setError('');
-            setShortUrl(null);
             try {
-              const response = await fetch('http://localhost:5000/shorten', {
-                method: 'POST',
+              const response = await fetch(`http://localhost:5000/shorten/${shortCode}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url }),
+                body: JSON.stringify({ url, newShortCode }),
               });
               const data = await response.json();
               if (response.ok) {
                 setShortUrl(data);
               } else {
-                setError(data.error || 'Failed to shorten URL');
+                setError(data.error || 'Failed to update URL');
               }
             } catch (err) {
               setError('Server error');
             }
           };
 
-          return (
-            <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        return (
+          <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
               <h1 className="text-3xl font-bold mb-6">URL Shortener</h1>
-              <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+              <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md mb-6">
+                <h2 className="text-xl font-semibold mb-4">Create Short URL</h2>
                 <div className="mb-4">
                   <input
                     type="text"
@@ -59,28 +101,63 @@
                 >
                   Shorten URL
                 </button>
-                {error && <p className="text-red-500 mt-2">{error}</p>}
-                {shortUrl && (
-                  <div className="mt-4">
-                    <p>
-                      Short URL:{' '}
-                      <a
-                        href={`http://localhost:5000/${shortUrl.shortCode}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 underline"
-                      >
-                        {`http://localhost:5000/${shortUrl.shortCode}`}
-                      </a>
-                    </p>
-                  </div>
-                )}
               </div>
-            </div>
-          );
-        }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
-      </script>
-    </body>
-    </html>
+              <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-4">Update Short URL</h2>
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={shortCode}
+                    onChange={(e) => setShortCode(e.target.value)}
+                    placeholder="Enter current short code"
+                    className="w-full p-2 border rounded-md mb-2"
+                  />
+                  <input
+                    type="text"
+                    value={newShortCode}
+                    onChange={(e) => setNewShortCode(e.target.value)}
+                    placeholder="Enter new short code"
+                    className="w-full p-2 border rounded-md mb-2"
+                  />
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="Enter new URL (optional)"
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <button
+                  onClick={handleUpdate}
+                  className="w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
+                >
+                  Update URL
+                </button>
+              </div>
+
+              {error && <p className="text-red-500 mt-2">{error}</p>}
+              {shortUrl && (
+                <div className="mt-4">
+                  <p>
+                    Short URL:{' '}
+                    <a
+                      href={`http://localhost:5000/${shortUrl.shortCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                    >
+                      {`http://localhost:5000/${shortUrl.shortCode}`}
+                    </a>
+                  </p>
+                </div>
+              )}
+            </div>
+        );
+      }
+
+      // Render the app
+      ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+  </body>
+</html>
