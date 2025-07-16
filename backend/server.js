@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const { nanoid } = require("nanoid");
 const Url = require('./models/urlShortner');
 const validUrl = require("valid-url");
-const cors = require('cors'); // ✅ Import cors
+const cors = require('cors');
 
 
 const app = express();
